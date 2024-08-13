@@ -22,12 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,34 +31,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.whiteboard.R
 import com.example.whiteboard.data.DrawView
-import com.example.whiteboard.data.StrokeManager
-import kotlinx.coroutines.launch
 
 
 @Composable
-fun WhiteBoardScreen() {
+fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
     val context = LocalContext.current
-    var recognizedText by remember { mutableStateOf("") }
-    var isModelInitialized by remember { mutableStateOf(false) }
-    var drawView: DrawView? by remember { mutableStateOf(null) }
-    val coroutineScope = rememberCoroutineScope()
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-    // Initialize the recognition model
-    LaunchedEffect(Unit) {
-        // Ensure the model is downloaded and initialized
-        StrokeManager.download()
-        // Delay to ensure model is ready;
-        kotlinx.coroutines.delay(2000)
-        isModelInitialized = true
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Drawing area using DrawView
         AndroidView(
             factory = {
                 DrawView(context, null).apply {
-                    drawView = this
+                    viewModel.setDrawView(this)
                 }
             },
             modifier = Modifier
@@ -92,7 +71,7 @@ fun WhiteBoardScreen() {
             ) {
                 Row {
                     Text(
-                        text = recognizedText,
+                        text = viewModel.recognizedText,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier
@@ -100,10 +79,10 @@ fun WhiteBoardScreen() {
                             .weight(1f)
                     )
 
-                    if (recognizedText.isNotEmpty()) {
+                    if (viewModel.recognizedText.isNotEmpty()) {
                         IconButton(
                             onClick = {
-                                val clip = ClipData.newPlainText("Recognized Text", recognizedText)
+                                val clip = ClipData.newPlainText("Recognized Text", viewModel.recognizedText)
                                 clipboardManager.setPrimaryClip(clip)
                             },
                             modifier = Modifier
@@ -128,10 +107,7 @@ fun WhiteBoardScreen() {
             ) {
                 Button(
                     onClick = {
-                        // Clear the drawing and recognized text
-                        drawView?.clear() // Clear canvas
-                        StrokeManager.clear() // Clear stroke data
-                        recognizedText = "" // Clear recognized text
+                        viewModel.clear()
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -142,16 +118,7 @@ fun WhiteBoardScreen() {
 
                 Button(
                     onClick = {
-                        coroutineScope.launch {
-                            // Ensure model is initialized before recognizing
-                            if (isModelInitialized) {
-                                StrokeManager.recognize { resultText ->
-                                    recognizedText = resultText
-                                }
-                            } else {
-                                recognizedText = "Model not initialized"
-                            }
-                        }
+                        viewModel.recognize()
                     },
                     modifier = Modifier.weight(1f)
                 ) {
