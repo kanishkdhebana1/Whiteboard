@@ -47,6 +47,7 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
         val action = event.actionMasked
         val x = event.x
         val y = event.y
+
         when (action) {
             MotionEvent.ACTION_DOWN -> currentStroke.moveTo(x, y)
             MotionEvent.ACTION_MOVE -> currentStroke.lineTo(x, y)
@@ -57,6 +58,7 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
             }
             else -> {}
         }
+
         StrokeManager.addNewTouchEvent(event)
         invalidate()
         return true

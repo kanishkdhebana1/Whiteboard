@@ -3,24 +3,38 @@ package com.example.whiteboard.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.example.whiteboard.R
 import com.example.whiteboard.data.DrawView
 import com.example.whiteboard.data.StrokeManager
@@ -40,8 +54,8 @@ fun WhiteBoardScreen() {
     LaunchedEffect(Unit) {
         // Ensure the model is downloaded and initialized
         StrokeManager.download()
-        // Delay to ensure model is ready; ideally you would use a callback here
-        kotlinx.coroutines.delay(2000) // Adjust delay as needed
+        // Delay to ensure model is ready;
+        kotlinx.coroutines.delay(2000)
         isModelInitialized = true
     }
 
@@ -50,15 +64,13 @@ fun WhiteBoardScreen() {
         AndroidView(
             factory = {
                 DrawView(context, null).apply {
-                    drawView = this // Assign reference to drawView
+                    drawView = this
                 }
             },
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
         )
-
-
 
         // Column for buttons at the bottom
         Column(
@@ -101,7 +113,7 @@ fun WhiteBoardScreen() {
 
                             ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_copy), // Replace with your copy icon resource
+                                painter = painterResource(id = R.drawable.ic_copy),
                                 contentDescription = "Copy"
                             )
                         }
