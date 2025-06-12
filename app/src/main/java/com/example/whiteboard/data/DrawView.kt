@@ -73,4 +73,8 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
             canvasBitmap!!.height
         )
     }
+
+    fun setStrokeColor(color: Int) {
+        currentStrokePaint.color = color
+    }
 }

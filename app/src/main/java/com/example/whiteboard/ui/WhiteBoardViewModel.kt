@@ -58,4 +58,8 @@ class WhiteBoardViewModel: ViewModel() {
         }
     }
 
+    fun setStrokeColor(color: Int) {
+        drawView?.setStrokeColor(color)
+    }
+
 }
