@@ -10,6 +10,7 @@ import android.graphics.Path
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.graphics.createBitmap
 
 class DrawView(context: Context?, attrs: AttributeSet?) :
     View(context, attrs) {
@@ -32,7 +33,7 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        canvasBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        canvasBitmap = createBitmap(w, h)
         drawCanvas = Canvas(canvasBitmap!!)
         invalidate()
     }

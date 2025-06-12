@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.whiteboard.R
@@ -39,7 +40,6 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Drawing area using DrawView
         AndroidView(
             factory = {
                 DrawView(context, null).apply {
@@ -51,14 +51,12 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
                 .background(Color.White)
         )
 
-        // Column for buttons at the bottom
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Display recognized text on top
             Card(colors = CardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -128,4 +126,12 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
         }
     }
 }
+
+
+@Preview
+@Composable
+fun WhiteBoardScreenPreview() {
+    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
+}
+
 
