@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.digital.ink.recognition)
     implementation(libs.filament.android)
+    implementation ("androidx.compose.material:material-icons-extended:1.5.1")
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -12,6 +12,7 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.core.graphics.createBitmap
 
+
 class DrawView(context: Context?, attrs: AttributeSet?) :
     View(context, attrs) {
     private val currentStrokePaint: Paint = Paint()
@@ -20,6 +21,9 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
     private var drawCanvas: Canvas? = null
     private var canvasBitmap: Bitmap? = null
     private val STROKE_WIDTH_DP = 8.0f
+
+    private var lastX = 0f
+    private var lastY = 0f
 
     init {
         currentStrokePaint.color = Color.BLACK
@@ -35,8 +39,10 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         canvasBitmap = createBitmap(w, h)
         drawCanvas = Canvas(canvasBitmap!!)
+        drawCanvas?.drawColor(Color.WHITE)
         invalidate()
     }
+
 
     override fun onDraw(canvas: Canvas) {
         canvas.drawBitmap(canvasBitmap!!, 0f, 0f, canvasPaint)
@@ -50,8 +56,18 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
         val y = event.y
 
         when (action) {
-            MotionEvent.ACTION_DOWN -> currentStroke.moveTo(x, y)
-            MotionEvent.ACTION_MOVE -> currentStroke.lineTo(x, y)
+            MotionEvent.ACTION_DOWN -> {
+                currentStroke.moveTo(x, y)
+                lastX = x
+                lastY = y
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val midX = (lastX + x) / 2
+                val midY = (lastY + y) / 2
+                currentStroke.quadTo(lastX, lastY, midX, midY)
+                lastX = x
+                lastY = y
+            }
             MotionEvent.ACTION_UP -> {
                 currentStroke.lineTo(x, y)
                 drawCanvas!!.drawPath(currentStroke, currentStrokePaint)
@@ -81,4 +97,9 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
     fun setStrokeWidth(width: Float) {
         currentStrokePaint.strokeWidth = width
     }
+
+    fun getBitmap(): Bitmap? {
+        return canvasBitmap
+    }
+
 }

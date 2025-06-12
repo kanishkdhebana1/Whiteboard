@@ -1,8 +1,10 @@
 package com.example.whiteboard.ui
 
+import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -26,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
@@ -37,7 +40,6 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,11 +59,13 @@ import com.example.whiteboard.R
 import com.example.whiteboard.data.DrawView
 
 
+@SuppressLint("UnrememberedMutableState")
 @Composable
 fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
     val context = LocalContext.current
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     var showColorPicker by remember { mutableStateOf(false) }
+    val strokeWidth = viewModel.strokeWidth
 
     Box(modifier = Modifier.fillMaxSize()) {
         AndroidView(
@@ -76,10 +80,14 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
                 .zIndex(0f)
         )
 
-        Row {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+        ) {
             IconButton(
                 onClick = { showColorPicker = !showColorPicker }
             ) {
+
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
@@ -123,18 +131,40 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
                     )
 
                     StrokeWidthSlider(
-                        initialValue = 8f,
-                        onWidthChanged = { newWidth ->
-                            viewModel.setStrokeWidth(newWidth)
+                        value = strokeWidth,
+                        onWidthChanged = {
+                            viewModel.updateStrokeWidth(it)
                         }
                     )
                 }
+            }
 
+            Spacer(modifier =  Modifier.weight(1f))
+
+            IconButton(
+                onClick = {
+                    viewModel.saveDrawingToFile(context) { success ->
+                        val message = if (success) "Saved!" else "Save failed"
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    }
+                },
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .width(30.dp)
+                        .height(30.dp)
+                        .background(Color(0xFFF2F2F2))
+                ) {
+                    Icon(
+                        modifier = Modifier.align(Alignment.Center),
+                        imageVector = Icons.Default.SaveAlt,
+                        contentDescription = "Save"
+                    )
+                }
             }
 
         }
-
-
 
 
         Column(
@@ -250,11 +280,9 @@ fun ColorPicker(
 
 @Composable
 fun StrokeWidthSlider(
-    initialValue: Float = 8f,
+    value: Float,
     onWidthChanged: (Float) -> Unit
 ) {
-    var strokeWidth by remember { mutableFloatStateOf(initialValue) }
-
     Column(
         modifier = Modifier
             .width(164.dp)
@@ -265,9 +293,8 @@ fun StrokeWidthSlider(
                 activeTrackColor = Color.Gray,
                 inactiveTrackColor = Color.LightGray
             ),
-            value = strokeWidth,
+            value = value,
             onValueChange = {
-                strokeWidth = it
                 onWidthChanged(it)
             },
             valueRange = 2f..30f,
