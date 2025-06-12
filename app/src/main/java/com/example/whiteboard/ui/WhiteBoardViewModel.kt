@@ -62,4 +62,7 @@ class WhiteBoardViewModel: ViewModel() {
         drawView?.setStrokeColor(color)
     }
 
+    fun setStrokeWidth(width: Float) {
+        drawView?.setStrokeWidth(width)
+    }
 }

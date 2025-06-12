@@ -77,4 +77,8 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
     fun setStrokeColor(color: Int) {
         currentStrokePaint.color = color
     }
+
+    fun setStrokeWidth(width: Float) {
+        currentStrokePaint.strokeWidth = width
+    }
 }

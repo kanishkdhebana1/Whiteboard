@@ -5,8 +5,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,28 +17,34 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -70,37 +76,66 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
                 .zIndex(0f)
         )
 
-        Column {
+        Row {
             IconButton(
                 onClick = { showColorPicker = !showColorPicker }
             ) {
-                Icon(
-                    imageVector = if (showColorPicker) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = "Toggle Color Picker"
-                )
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .width(30.dp)
+                        .height(30.dp)
+                        .background(Color(0xFFF2F2F2))
+                ) {
+                    Icon(
+                        modifier = Modifier.align(Alignment.Center),
+                        imageVector = if (showColorPicker) Icons.AutoMirrored.Filled.KeyboardArrowLeft else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Toggle Color Picker"
+                    )
+                }
             }
-
 
             AnimatedVisibility(
                 visible = showColorPicker,
-                enter = slideInVertically(
-                    initialOffsetY = { fullHeight -> 0 },
+                enter = slideInHorizontally(
+                    initialOffsetX = { fullHeight -> 0 },
                     animationSpec = tween(durationMillis = 300)
                 ),
-                exit = slideOutVertically(
-                    targetOffsetY = { fullHeight -> 0 },
+                exit = slideOutHorizontally(
+                    targetOffsetX = { fullHeight -> 0 },
                     animationSpec = tween(durationMillis = 300)
                 )
             ) {
-                ColorPicker(
-                    onColorSelected = { color ->
-                        viewModel.setStrokeColor(color)
-                        showColorPicker = false // optional: auto-collapse
-                    }
-                )
+                Column(
+                    Modifier
+                        .padding(top = 4.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .shadow(4.dp)
+                        .background(Color(0xFFF2F2F2))
+
+                ) {
+                    ColorPicker(
+                        modifier = Modifier,
+                        onColorSelected = { color ->
+                            viewModel.setStrokeColor(color)
+                            showColorPicker = false // optional: auto-collapse
+                        }
+                    )
+
+                    StrokeWidthSlider(
+                        initialValue = 8f,
+                        onWidthChanged = { newWidth ->
+                            viewModel.setStrokeWidth(newWidth)
+                        }
+                    )
+                }
+
             }
 
         }
+
+
+
 
         Column(
             modifier = Modifier
@@ -109,6 +144,8 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
                 .padding(16.dp)
                 .zIndex(1f)
         ) {
+
+
             Card(colors = CardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -132,7 +169,10 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
                     if (viewModel.recognizedText.isNotEmpty()) {
                         IconButton(
                             onClick = {
-                                val clip = ClipData.newPlainText("Recognized Text", viewModel.recognizedText)
+                                val clip = ClipData.newPlainText(
+                                    "Recognized Text",
+                                    viewModel.recognizedText
+                                )
                                 clipboardManager.setPrimaryClip(clip)
                             },
                             modifier = Modifier
@@ -150,14 +190,10 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
                 }
             }
 
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-
-
-
                 Button(
                     onClick = {
                         viewModel.clear()
@@ -185,6 +221,7 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
 
 @Composable
 fun ColorPicker(
+    modifier: Modifier = Modifier,
     onColorSelected: (Int) -> Unit
 ) {
     val colors = listOf(
@@ -195,7 +232,7 @@ fun ColorPicker(
         Color.Black,
     )
 
-    Column(modifier = Modifier.padding(8.dp)) {
+    Row(modifier = modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
         colors.forEach { color ->
             Box(
                 modifier = Modifier
@@ -209,6 +246,36 @@ fun ColorPicker(
         }
     }
 }
+
+
+@Composable
+fun StrokeWidthSlider(
+    initialValue: Float = 8f,
+    onWidthChanged: (Float) -> Unit
+) {
+    var strokeWidth by remember { mutableFloatStateOf(initialValue) }
+
+    Column(
+        modifier = Modifier
+            .width(164.dp)
+    ) {
+        Slider(
+            colors = SliderDefaults.colors(
+                thumbColor = Color.DarkGray,
+                activeTrackColor = Color.Gray,
+                inactiveTrackColor = Color.LightGray
+            ),
+            value = strokeWidth,
+            onValueChange = {
+                strokeWidth = it
+                onWidthChanged(it)
+            },
+            valueRange = 2f..30f,
+            steps = 0
+        )
+    }
+}
+
 
 
 @Preview
