@@ -9,7 +9,6 @@ WhiteBoard is a basic handwriting and drawing app built using Jetpack Compose. I
 - Adjustable stroke width
 - Handwriting text recognition using ML Kit
 - Save drawing as PNG image with white background
-- Undo and Redo actions
 
 ## How to Use
 
@@ -17,6 +16,5 @@ WhiteBoard is a basic handwriting and drawing app built using Jetpack Compose. I
 - Click the arrow icon to open tools for color and stroke width.
 - Press "Recognize" to extract text from your handwriting.
 - Press "Save" to store your drawing in internal storage.
-- Use "Undo" and "Redo" to revert or repeat actions.
 
 
