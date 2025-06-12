@@ -36,6 +36,24 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
         canvasPaint = Paint(Paint.DITHER_FLAG)
     }
 
+
+    private fun drawGrid(canvas: Canvas) {
+        val paint = Paint().apply {
+            color = Color.BLACK
+            strokeWidth = 1f
+            //alpha = 100 // very light
+        }
+
+        val spacing = 60
+        for (x in 0 until width step spacing) {
+            canvas.drawLine(x.toFloat(), 0f, x.toFloat(), height.toFloat(), paint)
+        }
+        for (y in 0 until height step spacing) {
+            canvas.drawLine(0f, y.toFloat(), width.toFloat(), y.toFloat(), paint)
+        }
+    }
+
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         canvasBitmap = createBitmap(w, h)
         drawCanvas = Canvas(canvasBitmap!!)
@@ -45,6 +63,8 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
 
 
     override fun onDraw(canvas: Canvas) {
+        canvas.drawColor(Color.WHITE)
+        drawGrid(canvas)
         canvas.drawBitmap(canvasBitmap!!, 0f, 0f, canvasPaint)
         canvas.drawPath(currentStroke, currentStrokePaint)
     }

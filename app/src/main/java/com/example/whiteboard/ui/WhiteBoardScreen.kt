@@ -5,13 +5,13 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,12 +26,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,17 +39,21 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -57,6 +61,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import com.example.whiteboard.R
 import com.example.whiteboard.data.DrawView
+import kotlinx.coroutines.launch
 
 
 @SuppressLint("UnrememberedMutableState")
@@ -66,137 +71,106 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     var showColorPicker by remember { mutableStateOf(false) }
     val strokeWidth = viewModel.strokeWidth
+    var selectedColor by remember { mutableIntStateOf(Color.Black.toArgb()) }
+
+
+    // State to track expansion
+    val collapsedHeight = 60.dp
+    val expandedHeight = 170.dp
+    val collapsedPx = with(LocalDensity.current) { collapsedHeight.toPx() }
+    val expandedPx = with(LocalDensity.current) { expandedHeight.toPx() }
+
+    val heightAnim = remember { Animatable(collapsedPx) }
+    var isExpanded by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(isExpanded) {
+        heightAnim.animateTo(
+            if (isExpanded) expandedPx else collapsedPx,
+            animationSpec = tween(durationMillis = 300)
+        )
+    }
+
+
+    var showResultCard by remember { mutableStateOf(false) }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(
-            factory = {
-                DrawView(context, null).apply {
-                    viewModel.setDrawView(this)
-                }
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-                .zIndex(0f)
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-        ) {
-            IconButton(
-                onClick = { showColorPicker = !showColorPicker }
-            ) {
-
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .width(30.dp)
-                        .height(30.dp)
-                        .background(Color(0xFFF2F2F2))
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.Center),
-                        imageVector = if (showColorPicker) Icons.AutoMirrored.Filled.KeyboardArrowLeft else Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Toggle Color Picker"
-                    )
-                }
-            }
-
-            AnimatedVisibility(
-                visible = showColorPicker,
-                enter = slideInHorizontally(
-                    initialOffsetX = { fullHeight -> 0 },
-                    animationSpec = tween(durationMillis = 300)
-                ),
-                exit = slideOutHorizontally(
-                    targetOffsetX = { fullHeight -> 0 },
-                    animationSpec = tween(durationMillis = 300)
-                )
-            ) {
-                Column(
-                    Modifier
-                        .padding(top = 4.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .shadow(4.dp)
-                        .background(Color(0xFFF2F2F2))
-
-                ) {
-                    ColorPicker(
-                        modifier = Modifier,
-                        onColorSelected = { color ->
-                            viewModel.setStrokeColor(color)
-                            showColorPicker = false // optional: auto-collapse
-                        }
-                    )
-
-                    StrokeWidthSlider(
-                        value = strokeWidth,
-                        onWidthChanged = {
-                            viewModel.updateStrokeWidth(it)
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier =  Modifier.weight(1f))
-
-            IconButton(
-                onClick = {
-                    viewModel.saveDrawingToFile(context) { success ->
-                        val message = if (success) "Saved!" else "Save failed"
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                    }
-                },
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .width(30.dp)
-                        .height(30.dp)
-                        .background(Color(0xFFF2F2F2))
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.Center),
-                        imageVector = Icons.Default.SaveAlt,
-                        contentDescription = "Save"
-                    )
-                }
-            }
-
-        }
-
-
         Column(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
+                .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .padding(16.dp)
                 .zIndex(1f)
         ) {
 
-
-            Card(colors = CardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row {
-                    Text(
-                        text = viewModel.recognizedText,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .weight(1f)
-                    )
 
-                    if (viewModel.recognizedText.isNotEmpty()) {
+                IconButton(
+                    onClick = {
+                        viewModel.clear()
+                    },
+
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .padding(end = 8.dp)
+                        .size(40.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .background(Color(0xFFF2F2F2))
+                    ) {
+                        Icon(
+                            modifier = Modifier.align(Alignment.Center),
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Clear screen"
+                        )
+                    }
+                }
+
+
+                Button(
+                    onClick = {
+                        viewModel.recognize()
+                        showResultCard = true
+                    },
+                    modifier = Modifier.width(85.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF2F2F2),
+                        contentColor = Color.DarkGray
+
+                    )
+                ) {
+                    Text("Parse")
+                }
+            }
+
+            if (showResultCard && viewModel.recognizedText.isNotEmpty()) {
+                Card(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFF2F2F2),
+                        contentColor = Color.DarkGray
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Row {
+                        Text(
+                            text = viewModel.recognizedText,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .weight(1f)
+                        )
+
                         IconButton(
                             onClick = {
                                 val clip = ClipData.newPlainText(
@@ -204,6 +178,7 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
                                     viewModel.recognizedText
                                 )
                                 clipboardManager.setPrimaryClip(clip)
+                                showResultCard = false
                             },
                             modifier = Modifier
                                 .size(50.dp)
@@ -219,29 +194,113 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
                     }
                 }
             }
+        }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Button(
-                    onClick = {
-                        viewModel.clear()
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Clear")
+        AndroidView(
+            factory = {
+                DrawView(context, null).apply {
+                    viewModel.setDrawView(this)
                 }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .zIndex(0f)
+        )
 
-                Spacer(modifier = Modifier.width(16.dp))
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .height(with(LocalDensity.current) { heightAnim.value.toDp() })
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(Color.LightGray.copy(alpha = 0.17f))
+                    .weight(1f)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onVerticalDrag = { change, dragAmount ->
+                                scope.launch {
+                                    val newHeight = heightAnim.value - dragAmount
+                                    heightAnim.snapTo(newHeight.coerceIn(collapsedPx, expandedPx))
+                                }
+                            },
+                            onDragEnd = {
+                                scope.launch {
+                                    isExpanded = heightAnim.value > (collapsedPx + expandedPx) / 2
+                                    heightAnim.animateTo(if (isExpanded) expandedPx else collapsedPx)
+                                }
+                            }
+                        )
+                    }
 
-                Button(
-                    onClick = {
-                        viewModel.recognize()
-                    },
-                    modifier = Modifier.weight(1f)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.Top
                 ) {
-                    Text("Recognize")
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .width(40.dp)
+                            .height(5.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.Gray.copy(alpha = 0.6f))
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    ColorPicker(
+                        modifier = Modifier.padding(start = 12.dp),
+                        selectedColor = selectedColor,
+                        onColorSelected = { color ->
+                            selectedColor = color
+                            viewModel.setStrokeColor(color)
+                            showColorPicker = false
+                        }
+                    )
+
+                    if (isExpanded) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        StrokeWidthSlider(
+                            value = strokeWidth,
+                            onWidthChanged = {
+                                viewModel.updateStrokeWidth(it)
+                            }
+                        )
+                    }
+                }
+            }
+
+            IconButton(
+                onClick = {
+                    viewModel.saveDrawingToFile(context) { success ->
+                        val message = if (success) "Saved!" else "Save failed"
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    }
+                },
+
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .padding(end = 8.dp)
+                    .size(60.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(Color(0xFFF2F2F2))
+                ) {
+                    Icon(
+                        modifier = Modifier.align(Alignment.Center),
+                        imageVector = Icons.Default.SaveAlt,
+                        contentDescription = "Save"
+                    )
                 }
             }
         }
@@ -252,25 +311,33 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
 @Composable
 fun ColorPicker(
     modifier: Modifier = Modifier,
-    onColorSelected: (Int) -> Unit
+    onColorSelected: (Int) -> Unit,
+    selectedColor: Int
 ) {
     val colors = listOf(
-        Color.Red,
-        Color.Green,
-        Color.Blue,
-        Color.Gray,
         Color.Black,
+        Color(0xFFF2DD15),
+        Color(0xFFF9922A),
+        Color(0xFFF72222),
+        Color(0xFF259DF1),
     )
 
-    Row(modifier = modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+    Row(modifier = modifier.padding(0.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
         colors.forEach { color ->
-            Box(
+            val isSelected = selectedColor == color.toArgb()
+
+                Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .padding(top = 4.dp, bottom = 4.dp, start = 6.dp, end = 6.dp)
+                    .border(
+                        width = 2.dp,
+                        color = if (isSelected) Color.Black else Color.Transparent,
+                        shape = CircleShape
+                    )
                     .padding(4.dp)
+                    .size(35.dp)
                     .clip(CircleShape)
                     .background(color)
-                    .border(2.dp, Color.Transparent, CircleShape)
                     .clickable { onColorSelected(color.toArgb()) }
             )
         }
@@ -284,25 +351,46 @@ fun StrokeWidthSlider(
     onWidthChanged: (Float) -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .width(164.dp)
+        modifier = Modifier.width(300.dp)
     ) {
-        Slider(
-            colors = SliderDefaults.colors(
-                thumbColor = Color.DarkGray,
-                activeTrackColor = Color.Gray,
-                inactiveTrackColor = Color.LightGray
-            ),
-            value = value,
-            onValueChange = {
-                onWidthChanged(it)
-            },
-            valueRange = 2f..30f,
-            steps = 0
+        Text(
+            modifier = Modifier
+                .padding(bottom = 4.dp),
+            text = "Stroke Width"
         )
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Slider(
+                value = value,
+                onValueChange = onWidthChanged,
+                valueRange = 2f..40f,
+                steps = 0,
+                modifier = Modifier.weight(1f),
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.DarkGray,
+                    activeTrackColor = Color.Gray,
+                    inactiveTrackColor = Color.LightGray
+                )
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Canvas(
+                modifier = Modifier
+                    .size(40.dp)
+            ) {
+                drawCircle(
+                    color = Color.Black,
+                    radius = value / 1.4f
+                )
+            }
+        }
     }
 }
-
 
 
 @Preview
@@ -310,5 +398,6 @@ fun StrokeWidthSlider(
 fun WhiteBoardScreenPreview() {
     WhiteBoardScreen(viewModel = WhiteBoardViewModel())
 }
+
 
 
