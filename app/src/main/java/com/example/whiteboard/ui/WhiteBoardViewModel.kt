@@ -15,6 +15,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.whiteboard.data.DrawView
 import com.example.whiteboard.data.StrokeManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -26,10 +28,14 @@ class WhiteBoardViewModel: ViewModel() {
     var strokeWidth by mutableFloatStateOf(8f)
         private set
 
+
     private var isModelInitialized by mutableStateOf(false)
 
     @SuppressLint("StaticFieldLeak")
     private var drawView: DrawView? = null
+
+    private val _showResultCard = MutableStateFlow(false)
+    val showResultCard: StateFlow<Boolean> = _showResultCard
 
     init {
         initializeModel()
@@ -114,5 +120,7 @@ class WhiteBoardViewModel: ViewModel() {
         }
     }
 
-
+    fun setShowResultCard(show: Boolean) {
+        _showResultCard.value = show
+    }
 }

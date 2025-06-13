@@ -26,7 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,6 +40,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -68,14 +69,162 @@ import kotlinx.coroutines.launch
 @Composable
 fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
     val context = LocalContext.current
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        TopBar(
+            viewModel = viewModel,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+        )
+
+        AndroidView(
+            factory = {
+                DrawView(context, null).apply {
+                    viewModel.setDrawView(this)
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(0f)
+        )
+
+        BottomBar(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+            viewModel = viewModel
+        )
+    }
+}
+
+
+@Composable
+fun TopBar(
+    viewModel: WhiteBoardViewModel,
+    modifier: Modifier = Modifier
+) {
+
+    val showResultCard by viewModel.showResultCard.collectAsState()
+    val context = LocalContext.current
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    var showColorPicker by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .zIndex(1f)
+    ) {
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+
+            IconButton(
+                onClick = {
+                    viewModel.clear()
+                },
+
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .padding(end = 8.dp)
+                    .size(40.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                        .background(Color(0xFFF2F2F2))
+                ) {
+                    Icon(
+                        modifier = Modifier.align(Alignment.Center),
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Clear screen"
+                    )
+                }
+            }
+
+
+            Button(
+                onClick = {
+                    viewModel.recognize()
+                    viewModel.setShowResultCard(true)
+                },
+                modifier = Modifier.width(85.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFF2F2F2),
+                    contentColor = Color.DarkGray
+
+                )
+            ) {
+                Text(
+                    text = "Parse",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                )
+            }
+        }
+
+        if (showResultCard && viewModel.recognizedText.isNotEmpty()) {
+            Card(modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFF2F2F2),
+                    contentColor = Color.DarkGray
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Row {
+                    Text(
+                        text = viewModel.recognizedText,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .weight(1f)
+                    )
+
+                    IconButton(
+                        onClick = {
+                            val clip = ClipData.newPlainText(
+                                "Recognized Text",
+                                viewModel.recognizedText
+                            )
+                            clipboardManager.setPrimaryClip(clip)
+                            viewModel.setShowResultCard(false)
+                        },
+                        modifier = Modifier
+                            .size(50.dp)
+                            .align(Alignment.CenterVertically)
+                            .padding(8.dp),
+
+                        ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_copy),
+                            contentDescription = "Copy"
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BottomBar(
+    modifier: Modifier = Modifier,
+    viewModel: WhiteBoardViewModel
+) {
+
+    val context = LocalContext.current
     val strokeWidth = viewModel.strokeWidth
     var selectedColor by remember { mutableIntStateOf(Color.Black.toArgb()) }
 
-
     // State to track expansion
-    val collapsedHeight = 60.dp
+    val collapsedHeight = 55.dp
     val expandedHeight = 170.dp
     val collapsedPx = with(LocalDensity.current) { collapsedHeight.toPx() }
     val expandedPx = with(LocalDensity.current) { expandedHeight.toPx() }
@@ -91,217 +240,101 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
         )
     }
 
-
-    var showResultCard by remember { mutableStateOf(false) }
-
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        Box(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .padding(16.dp)
-                .zIndex(1f)
-        ) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-
-                IconButton(
-                    onClick = {
-                        viewModel.clear()
-                    },
-
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(end = 8.dp)
-                        .size(40.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(Color(0xFFF2F2F2))
-                    ) {
-                        Icon(
-                            modifier = Modifier.align(Alignment.Center),
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Clear screen"
-                        )
-                    }
-                }
-
-
-                Button(
-                    onClick = {
-                        viewModel.recognize()
-                        showResultCard = true
-                    },
-                    modifier = Modifier.width(85.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF2F2F2),
-                        contentColor = Color.DarkGray
-
-                    )
-                ) {
-                    Text("Parse")
-                }
-            }
-
-            if (showResultCard && viewModel.recognizedText.isNotEmpty()) {
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFF2F2F2),
-                        contentColor = Color.DarkGray
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Row {
-                        Text(
-                            text = viewModel.recognizedText,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .weight(1f)
-                        )
-
-                        IconButton(
-                            onClick = {
-                                val clip = ClipData.newPlainText(
-                                    "Recognized Text",
-                                    viewModel.recognizedText
-                                )
-                                clipboardManager.setPrimaryClip(clip)
-                                showResultCard = false
-                            },
-                            modifier = Modifier
-                                .size(50.dp)
-                                .align(Alignment.CenterVertically)
-                                .padding(8.dp),
-
-                            ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_copy),
-                                contentDescription = "Copy"
-                            )
+                .padding(8.dp)
+                .height(with(LocalDensity.current) { heightAnim.value.toDp() })
+                .clip(RoundedCornerShape(30.dp))
+                .background(Color.LightGray.copy(alpha = 0.17f))
+                .weight(1f)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onVerticalDrag = { change, dragAmount ->
+                            scope.launch {
+                                val newHeight = heightAnim.value - dragAmount
+                                heightAnim.snapTo(newHeight.coerceIn(collapsedPx, expandedPx))
+                            }
+                        },
+                        onDragEnd = {
+                            scope.launch {
+                                isExpanded = heightAnim.value > (collapsedPx + expandedPx) / 2
+                                heightAnim.animateTo(if (isExpanded) expandedPx else collapsedPx)
+                            }
                         }
+                    )
+                }
+
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.Top
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .width(40.dp)
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.Gray.copy(alpha = 0.6f))
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ColorPicker(
+                    modifier = Modifier
+                        .padding(start = 12.dp)
+                        .align(Alignment.CenterHorizontally),
+                    selectedColor = selectedColor,
+                    onColorSelected = { color ->
+                        selectedColor = color
+                        viewModel.setStrokeColor(color)
                     }
+                )
+
+                if (isExpanded) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    StrokeWidthSlider(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        value = strokeWidth,
+                        onWidthChanged = {
+                            viewModel.updateStrokeWidth(it)
+                        },
+                        color = Color(selectedColor)
+                    )
                 }
             }
         }
 
-        AndroidView(
-            factory = {
-                DrawView(context, null).apply {
-                    viewModel.setDrawView(this)
+        IconButton(
+            onClick = {
+                viewModel.saveDrawingToFile(context) { success ->
+                    val message = if (success) "Saved!" else "Save failed"
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
             },
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-                .zIndex(0f)
-        )
 
-        Row(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
+                .align(Alignment.CenterVertically)
+                .padding(end = 8.dp)
+                .size(60.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .padding(8.dp)
-                    .height(with(LocalDensity.current) { heightAnim.value.toDp() })
-                    .clip(RoundedCornerShape(30.dp))
-                    .background(Color.LightGray.copy(alpha = 0.17f))
-                    .weight(1f)
-                    .pointerInput(Unit) {
-                        detectVerticalDragGestures(
-                            onVerticalDrag = { change, dragAmount ->
-                                scope.launch {
-                                    val newHeight = heightAnim.value - dragAmount
-                                    heightAnim.snapTo(newHeight.coerceIn(collapsedPx, expandedPx))
-                                }
-                            },
-                            onDragEnd = {
-                                scope.launch {
-                                    isExpanded = heightAnim.value > (collapsedPx + expandedPx) / 2
-                                    heightAnim.animateTo(if (isExpanded) expandedPx else collapsedPx)
-                                }
-                            }
-                        )
-                    }
-
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .background(Color(0xFFF2F2F2))
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .width(40.dp)
-                            .height(5.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(Color.Gray.copy(alpha = 0.6f))
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    ColorPicker(
-                        modifier = Modifier.padding(start = 12.dp),
-                        selectedColor = selectedColor,
-                        onColorSelected = { color ->
-                            selectedColor = color
-                            viewModel.setStrokeColor(color)
-                            showColorPicker = false
-                        }
-                    )
-
-                    if (isExpanded) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        StrokeWidthSlider(
-                            value = strokeWidth,
-                            onWidthChanged = {
-                                viewModel.updateStrokeWidth(it)
-                            }
-                        )
-                    }
-                }
-            }
-
-            IconButton(
-                onClick = {
-                    viewModel.saveDrawingToFile(context) { success ->
-                        val message = if (success) "Saved!" else "Save failed"
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                    }
-                },
-
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .padding(end = 8.dp)
-                    .size(60.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape)
-                        .background(Color(0xFFF2F2F2))
-                ) {
-                    Icon(
-                        modifier = Modifier.align(Alignment.Center),
-                        imageVector = Icons.Default.SaveAlt,
-                        contentDescription = "Save"
-                    )
-                }
+                Icon(
+                    modifier = Modifier.align(Alignment.Center),
+                    imageVector = Icons.Default.SaveAlt,
+                    contentDescription = "Save"
+                )
             }
         }
     }
@@ -334,7 +367,6 @@ fun ColorPicker(
                         color = if (isSelected) Color.Black else Color.Transparent,
                         shape = CircleShape
                     )
-                    .padding(4.dp)
                     .size(35.dp)
                     .clip(CircleShape)
                     .background(color)
@@ -347,15 +379,17 @@ fun ColorPicker(
 
 @Composable
 fun StrokeWidthSlider(
+    modifier: Modifier = Modifier,
     value: Float,
-    onWidthChanged: (Float) -> Unit
+    onWidthChanged: (Float) -> Unit,
+    color: Color = Color.Black
 ) {
     Column(
-        modifier = Modifier.width(300.dp)
+        modifier = modifier.width(300.dp)
     ) {
         Text(
             modifier = Modifier
-                .padding(bottom = 4.dp),
+                .padding(start = 4.dp),
             text = "Stroke Width"
         )
 
@@ -384,7 +418,7 @@ fun StrokeWidthSlider(
                     .size(40.dp)
             ) {
                 drawCircle(
-                    color = Color.Black,
+                    color = color,
                     radius = value / 1.4f
                 )
             }
@@ -393,11 +427,47 @@ fun StrokeWidthSlider(
 }
 
 
-@Preview
+
+
+
+@Preview(
+    name = "Compact Phone",
+    device = "spec:width=320dp,height=568dp,orientation=portrait"
+)
 @Composable
-fun WhiteBoardScreenPreview() {
+fun PreviewCompactPhone() {
     WhiteBoardScreen(viewModel = WhiteBoardViewModel())
 }
+
+@Preview(
+    name = "Medium Phone",
+    device = "spec:width=411dp,height=891dp,orientation=portrait"
+)
+@Composable
+fun PreviewMediumPhone() {
+    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
+}
+
+@Preview(
+    name = "Tall Slim Phone",
+    device = "spec:width=360dp,height=800dp,orientation=portrait"
+)
+@Composable
+fun PreviewTallSlimPhone() {
+    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
+}
+
+@Preview(
+    name = "Large Phone",
+    device = "spec:width=480dp,height=960dp,orientation=portrait"
+)
+@Composable
+fun PreviewLargePhone() {
+    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
+}
+
+
+
 
 
 

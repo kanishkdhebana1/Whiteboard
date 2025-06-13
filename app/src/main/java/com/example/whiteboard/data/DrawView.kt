@@ -20,7 +20,7 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
     private val currentStroke: Path
     private var drawCanvas: Canvas? = null
     private var canvasBitmap: Bitmap? = null
-    private val STROKE_WIDTH_DP = 8.0f
+    private val strokeWidthDP = 8.0f
 
     private var lastX = 0f
     private var lastY = 0f
@@ -28,7 +28,7 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
     init {
         currentStrokePaint.color = Color.BLACK
         currentStrokePaint.isAntiAlias = true
-        currentStrokePaint.strokeWidth = STROKE_WIDTH_DP
+        currentStrokePaint.strokeWidth = strokeWidthDP
         currentStrokePaint.style = Paint.Style.STROKE
         currentStrokePaint.strokeJoin = Paint.Join.ROUND
         currentStrokePaint.strokeCap = Paint.Cap.ROUND
@@ -39,12 +39,13 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
 
     private fun drawGrid(canvas: Canvas) {
         val paint = Paint().apply {
-            color = Color.BLACK
+            color = Color.GRAY
             strokeWidth = 1f
-            //alpha = 100 // very light
+            style = Paint.Style.FILL
+            alpha = 100 // very light
         }
 
-        val spacing = 60
+        val spacing = 80
         for (x in 0 until width step spacing) {
             canvas.drawLine(x.toFloat(), 0f, x.toFloat(), height.toFloat(), paint)
         }
@@ -52,6 +53,27 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
             canvas.drawLine(0f, y.toFloat(), width.toFloat(), y.toFloat(), paint)
         }
     }
+
+
+//    private fun drawGrid(canvas: Canvas) {
+//        val paint = Paint().apply {
+//            color = Color.BLACK
+//            strokeWidth = 1f
+//            style = Paint.Style.STROKE
+//            alpha = 100 // Light lines
+//            pathEffect = DashPathEffect(floatArrayOf(5f, 10f), 0f) // 5px dash, 10px gap
+//            isAntiAlias = true
+//        }
+//
+//        val spacing = 60
+//        for (x in 0 until width step spacing) {
+//            canvas.drawLine(x.toFloat(), 0f, x.toFloat(), height.toFloat(), paint)
+//        }
+//        for (y in 0 until height step spacing) {
+//            canvas.drawLine(0f, y.toFloat(), width.toFloat(), y.toFloat(), paint)
+//        }
+//    }
+
 
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -63,9 +85,9 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
 
 
     override fun onDraw(canvas: Canvas) {
-        canvas.drawColor(Color.WHITE)
-        drawGrid(canvas)
+        //canvas.drawColor(Color.BLACK)
         canvas.drawBitmap(canvasBitmap!!, 0f, 0f, canvasPaint)
+        drawGrid(canvas)
         canvas.drawPath(currentStroke, currentStrokePaint)
     }
 
