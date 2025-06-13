@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -53,9 +56,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -99,6 +104,7 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
 }
 
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun TopBar(
     viewModel: WhiteBoardViewModel,
@@ -108,6 +114,9 @@ fun TopBar(
     val showResultCard by viewModel.showResultCard.collectAsState()
     val context = LocalContext.current
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+
+
 
     Column(
         modifier = modifier
@@ -127,9 +136,8 @@ fun TopBar(
                 },
 
                 modifier = Modifier
-                    .align(Alignment.CenterVertically)
                     .padding(end = 8.dp)
-                    .size(40.dp)
+                    .size(50.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -149,9 +157,9 @@ fun TopBar(
             Button(
                 onClick = {
                     viewModel.recognize()
+                    viewModel.recognizeAndCalculate()
                     viewModel.setShowResultCard(true)
                 },
-                modifier = Modifier.width(85.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFF2F2F2),
                     contentColor = Color.DarkGray
@@ -166,49 +174,74 @@ fun TopBar(
             }
         }
 
+
+
         if (showResultCard && viewModel.recognizedText.isNotEmpty()) {
-            Card(modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFF2F2F2),
-                    contentColor = Color.DarkGray
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.TopEnd
             ) {
-                Row {
-                    Text(
-                        text = viewModel.recognizedText,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .weight(1f)
-                    )
+                Card(modifier = Modifier
+                    .wrapContentHeight()
+                    .wrapContentWidth()
+                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFF2F2F2),
+                        contentColor = Color.Black
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    val calculationResult = viewModel.calculationResult.trim()
 
-                    IconButton(
-                        onClick = {
-                            val clip = ClipData.newPlainText(
-                                "Recognized Text",
-                                viewModel.recognizedText
-                            )
-                            clipboardManager.setPrimaryClip(clip)
-                            viewModel.setShowResultCard(false)
-                        },
-                        modifier = Modifier
-                            .size(50.dp)
-                            .align(Alignment.CenterVertically)
-                            .padding(8.dp),
+                    val showCalculatedResult = calculationResult.isNotEmpty() &&
+                            calculationResult != "Invalid expression" &&
+                            calculationResult != "No expression"
 
-                        ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_copy),
-                            contentDescription = "Copy"
+                    val text = if (showCalculatedResult) {
+                        "${viewModel.recognizedText} = ${viewModel.calculationResult}"
+                    } else {
+                        viewModel.recognizedText
+                    }
+
+                    Row {
+                        Text(
+                            text = text,
+                            color = Color.Black,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .weight(1f, fill = false)
+                                .wrapContentWidth()
+                                .wrapContentHeight(),
+                            maxLines = Int.MAX_VALUE,
+                            overflow = TextOverflow.Clip
                         )
+
+                        IconButton(
+                            onClick = {
+                                val clip = ClipData.newPlainText(
+                                    "Recognized Text",
+                                    viewModel.recognizedText
+                                )
+                                clipboardManager.setPrimaryClip(clip)
+                                viewModel.setShowResultCard(false)
+                            },
+                            modifier = Modifier
+                                .size(50.dp)
+                                .align(Alignment.CenterVertically)
+                                .padding(8.dp),
+
+                            ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_copy),
+                                contentDescription = "Copy"
+                            )
+                        }
                     }
                 }
             }
+
         }
     }
 }
@@ -224,7 +257,7 @@ fun BottomBar(
     var selectedColor by remember { mutableIntStateOf(Color.Black.toArgb()) }
 
     // State to track expansion
-    val collapsedHeight = 55.dp
+    val collapsedHeight = 58.dp
     val expandedHeight = 170.dp
     val collapsedPx = with(LocalDensity.current) { collapsedHeight.toPx() }
     val expandedPx = with(LocalDensity.current) { expandedHeight.toPx() }
@@ -347,6 +380,11 @@ fun ColorPicker(
     onColorSelected: (Int) -> Unit,
     selectedColor: Int
 ) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+
+    val dotSize = screenWidth * 0.09f
+
     val colors = listOf(
         Color.Black,
         Color(0xFFF2DD15),
@@ -355,19 +393,23 @@ fun ColorPicker(
         Color(0xFF259DF1),
     )
 
-    Row(modifier = modifier.padding(0.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
         colors.forEach { color ->
             val isSelected = selectedColor == color.toArgb()
 
                 Box(
                 modifier = Modifier
-                    .padding(top = 4.dp, bottom = 4.dp, start = 6.dp, end = 6.dp)
+                    .padding(top = 4.dp, bottom = 4.dp, start = 4.dp, end = 4.dp)
                     .border(
                         width = 2.dp,
                         color = if (isSelected) Color.Black else Color.Transparent,
                         shape = CircleShape
                     )
-                    .size(35.dp)
+                    .padding(3.dp)
+                    .size(dotSize)
                     .clip(CircleShape)
                     .background(color)
                     .clickable { onColorSelected(color.toArgb()) }
@@ -430,14 +472,14 @@ fun StrokeWidthSlider(
 
 
 
-@Preview(
-    name = "Compact Phone",
-    device = "spec:width=320dp,height=568dp,orientation=portrait"
-)
-@Composable
-fun PreviewCompactPhone() {
-    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
-}
+//@Preview(
+//    name = "Compact Phone",
+//    device = "spec:width=320dp,height=568dp,orientation=portrait"
+//)
+//@Composable
+//fun PreviewCompactPhone() {
+//    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
+//}
 
 @Preview(
     name = "Medium Phone",
@@ -448,23 +490,23 @@ fun PreviewMediumPhone() {
     WhiteBoardScreen(viewModel = WhiteBoardViewModel())
 }
 
-@Preview(
-    name = "Tall Slim Phone",
-    device = "spec:width=360dp,height=800dp,orientation=portrait"
-)
-@Composable
-fun PreviewTallSlimPhone() {
-    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
-}
-
-@Preview(
-    name = "Large Phone",
-    device = "spec:width=480dp,height=960dp,orientation=portrait"
-)
-@Composable
-fun PreviewLargePhone() {
-    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
-}
+//@Preview(
+//    name = "Tall Slim Phone",
+//    device = "spec:width=360dp,height=800dp,orientation=portrait"
+//)
+//@Composable
+//fun PreviewTallSlimPhone() {
+//    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
+//}
+//
+//@Preview(
+//    name = "Large Phone",
+//    device = "spec:width=480dp,height=960dp,orientation=portrait"
+//)
+//@Composable
+//fun PreviewLargePhone() {
+//    WhiteBoardScreen(viewModel = WhiteBoardViewModel())
+//}
 
 
 

@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.mariuszgromada.math.mxparser.Expression
 
 class WhiteBoardViewModel: ViewModel() {
 
@@ -36,6 +37,45 @@ class WhiteBoardViewModel: ViewModel() {
 
     private val _showResultCard = MutableStateFlow(false)
     val showResultCard: StateFlow<Boolean> = _showResultCard
+
+    var calculationResult by mutableStateOf("")
+        private set
+
+    fun recognizeAndCalculate() {
+        viewModelScope.launch {
+            if (isModelInitialized) {
+                StrokeManager.recognize { resultText ->
+                    updateRecognizedText(resultText)
+
+                    val cleanedExpression = resultText
+                        .replace("x", "*", ignoreCase = true)
+                        .replace("X", "*") // Just to be extra safe
+                        .trim()
+
+
+                    val expression = cleanedExpression.trim()
+                    if (expression.isEmpty()) {
+                        calculationResult = "No expression"
+                    } else {
+                        val exp = Expression(expression)
+                        val result = exp.calculate()
+
+                        calculationResult = if (result.isNaN()) {
+                            "Invalid expression"
+                        } else {
+                            result.toString()
+                        }
+                    }
+                }
+            } else {
+                updateRecognizedText("Model not initialized")
+                calculationResult = "Model not initialized"
+            }
+        }
+    }
+
+
+
 
     init {
         initializeModel()
@@ -59,6 +99,7 @@ class WhiteBoardViewModel: ViewModel() {
 
     fun clear() {
         recognizedText = ""
+        calculationResult = ""
         StrokeManager.clear()
         drawView?.clear()
     }
