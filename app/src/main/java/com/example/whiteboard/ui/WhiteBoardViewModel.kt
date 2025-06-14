@@ -161,7 +161,8 @@ class WhiteBoardViewModel: ViewModel() {
         }
     }
 
-    fun setShowResultCard(show: Boolean) {
+    fun setShowResultCard
+                (show: Boolean) {
         _showResultCard.value = show
     }
 }
