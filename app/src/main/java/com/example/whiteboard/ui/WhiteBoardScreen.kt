@@ -20,15 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import com.example.whiteboard.R
 import com.example.whiteboard.ui.components.BottomBar
 import com.example.whiteboard.ui.components.CustomCanvas
-import com.example.whiteboard.ui.components.TopBar
+import com.example.whiteboard.ui.components.SideBar
+import com.example.whiteboard.ui.theme.LocalCustomColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -42,7 +39,7 @@ fun WhiteBoardScreen(viewModel: WhiteBoardViewModel) {
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        TopBar(
+        SideBar(
             viewModel = viewModel,
             modifier = Modifier.align(Alignment.TopStart)
         )
@@ -80,7 +77,7 @@ fun ScrollButtons(
     scrollState: ScrollState,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
+    val customColors = LocalCustomColors.current
 
     Box(modifier = modifier.fillMaxSize()) {
         if (showScrollUpButton) {
@@ -93,13 +90,14 @@ fun ScrollButtons(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(15.dp)
-                    .background(Color(ContextCompat.getColor(context, R.color.button_gray)), CircleShape)
+                    .background(customColors.buttonGray, CircleShape)
                     .size(40.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowUp,
                     contentDescription = "Scroll Up",
-                    tint = Color.Black
+                    tint = customColors.scrollButtonIcon,
+                    modifier = Modifier.size(30.dp)
                 )
             }
         }
@@ -115,13 +113,14 @@ fun ScrollButtons(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(15.dp)
-                    .background(Color(ContextCompat.getColor(context, R.color.button_gray)), CircleShape)
+                    .background(customColors.buttonGray, CircleShape)
                     .size(40.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = "Scroll Down",
-                    tint = Color.Black
+                    tint = customColors.scrollButtonIcon,
+                    modifier = Modifier.size(30.dp)
                 )
             }
         }

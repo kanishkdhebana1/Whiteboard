@@ -38,12 +38,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import com.example.whiteboard.R
 import com.example.whiteboard.ui.WhiteBoardViewModel
+import com.example.whiteboard.ui.theme.LocalCustomColors
+import com.example.whiteboard.ui.theme.penBlack
+import com.example.whiteboard.ui.theme.penBlue
+import com.example.whiteboard.ui.theme.penOrange
+import com.example.whiteboard.ui.theme.penRed
+import com.example.whiteboard.ui.theme.penWhite
+import com.example.whiteboard.ui.theme.penYellow
 import kotlinx.coroutines.launch
 
 @Composable
@@ -53,7 +57,8 @@ fun BottomBar(
 ) {
 
     val strokeWidth = viewModel.strokeWidth
-    var selectedColor by remember { mutableIntStateOf(Color.Black.toArgb()) }
+    val customColors = LocalCustomColors.current
+    var selectedColor by remember { mutableIntStateOf(customColors.defaultStrokeColor.toArgb()) }
 
     // State to track expansion
     val collapsedHeight = 58.dp
@@ -81,7 +86,7 @@ fun BottomBar(
                 .padding(start = 10.dp, bottom = 10.dp)
                 .height(with(LocalDensity.current) { heightAnim.value.toDp() })
                 .clip(RoundedCornerShape(30.dp))
-                .background(Color.LightGray.copy(alpha = 0.24f))
+                .background(customColors.buttonGray.copy(alpha = 0.7f))
                 .weight(1f)
                 .pointerInput(Unit) {
                     detectVerticalDragGestures(
@@ -110,10 +115,10 @@ fun BottomBar(
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .width(40.dp)
-                        .height(5.dp)
+                        .width(80.dp)
+                        .height(2.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(Color.Gray.copy(alpha = 0.6f))
+                        .background(customColors.bottomBarExpansionBar.copy(alpha = 0.7f))
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -126,7 +131,8 @@ fun BottomBar(
                     onColorSelected = { color ->
                         selectedColor = color
                         viewModel.setStrokeColor(color)
-                    }
+                    },
+                    selectedBorderColor = customColors.colorPickerBorder
                 )
 
                 if (isExpanded) {
@@ -157,35 +163,35 @@ fun BottomBar(
 fun ColorPicker(
     modifier: Modifier = Modifier,
     onColorSelected: (Int) -> Unit,
-    selectedColor: Int
+    selectedColor: Int,
+    selectedBorderColor: Color
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
-
     val dotSize = screenWidth * 0.09f
-    val context = LocalContext.current
 
     val colors = listOf(
-        ContextCompat.getColor(context, R.color.pen_black),
-        ContextCompat.getColor(context, R.color.pen_yellow),
-        ContextCompat.getColor(context, R.color.pen_orange),
-        ContextCompat.getColor(context, R.color.pen_red),
-        ContextCompat.getColor(context, R.color.pen_blue)
+        penWhite.toArgb(),
+        penBlack.toArgb(),
+        penYellow.toArgb(),
+        penOrange.toArgb(),
+        penRed.toArgb(),
+        penBlue.toArgb()
     )
 
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.SpaceEvenly
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         colors.forEach { color ->
             val isSelected = selectedColor == color
 
             Box(
                 modifier = Modifier
-                    .padding(top = 4.dp, bottom = 4.dp, start = 4.dp, end = 4.dp)
+                    .padding(top = 4.dp, bottom = 4.dp)
                     .border(
                         width = 2.dp,
-                        color = if (isSelected) Color.Black else Color.Transparent,
+                        color = if (isSelected) selectedBorderColor else Color.Transparent,
                         shape = CircleShape
                     )
                     .padding(3.dp)
@@ -205,13 +211,16 @@ fun StrokeWidthSlider(
     onWidthChanged: (Float) -> Unit,
     color: Color = Color.Black
 ) {
+    val customColors = LocalCustomColors.current
+
     Column(
         modifier = modifier.width(300.dp)
     ) {
         Text(
             modifier = Modifier
                 .padding(start = 4.dp),
-            text = "Stroke Width"
+            text = "Stroke Width",
+            color = customColors.text,
         )
 
         Row(

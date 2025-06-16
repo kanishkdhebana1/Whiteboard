@@ -54,11 +54,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.example.whiteboard.R
 import com.example.whiteboard.ui.WhiteBoardViewModel
+import com.example.whiteboard.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun TopBar(
+fun SideBar(
     viewModel: WhiteBoardViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -74,6 +75,8 @@ fun TopBar(
         delay(100)
         showLeftIcon = expanded
     }
+
+    val customColors = LocalCustomColors.current
 
     Box(
         modifier = modifier
@@ -105,7 +108,7 @@ fun TopBar(
                 modifier = Modifier
                     .padding(start = 38.dp)
                     .clip(RoundedCornerShape(30.dp))
-                    .background(Color.LightGray.copy(alpha = 0.35f))
+                    .background(customColors.bottomBarColor.copy(alpha = 0.7f))
                     .padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -277,5 +280,5 @@ fun ParseDisplay(
 @Preview
 @Composable
 fun TopBarPreview() {
-    TopBar(viewModel = WhiteBoardViewModel())
+    SideBar(viewModel = WhiteBoardViewModel())
 }

@@ -74,12 +74,17 @@ class DrawView(context: Context?, attrs: AttributeSet?) :
 //        }
 //    }
 
+    private var canvasColor: Int = Color.WHITE // fallback
 
+    fun setCanvasColor(color: Int) {
+        canvasColor = color
+        invalidate()
+    }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         canvasBitmap = createBitmap(w, h)
         drawCanvas = Canvas(canvasBitmap!!)
-        drawCanvas?.drawColor(Color.WHITE)
+        drawCanvas?.drawColor(canvasColor)
         invalidate()
     }
 

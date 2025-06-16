@@ -9,6 +9,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.whiteboard.ui.WhiteBoardScreen
 import com.example.whiteboard.ui.WhiteBoardViewModel
+import com.example.whiteboard.ui.theme.WhiteboardTheme
 
 //class MainActivity : ComponentActivity() {
 //    private val viewModel by viewModels<WhiteBoardViewModel>()
@@ -40,7 +41,9 @@ class MainActivity : ComponentActivity() {
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
         setContent {
-            WhiteBoardScreen(viewModel = viewModel)
+            WhiteboardTheme {
+                WhiteBoardScreen(viewModel = viewModel)
+            }
         }
     }
 }

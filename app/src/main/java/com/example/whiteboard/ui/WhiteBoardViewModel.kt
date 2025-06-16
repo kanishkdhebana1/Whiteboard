@@ -33,7 +33,7 @@ class WhiteBoardViewModel: ViewModel() {
     private var isModelInitialized by mutableStateOf(false)
 
     @SuppressLint("StaticFieldLeak")
-    private var drawView: DrawView? = null
+    internal var drawView: DrawView? = null
 
     private val _showResultCard = MutableStateFlow(false)
     val showResultCard: StateFlow<Boolean> = _showResultCard

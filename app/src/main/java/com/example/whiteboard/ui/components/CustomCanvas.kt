@@ -10,13 +10,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.whiteboard.data.DrawView
 import com.example.whiteboard.ui.WhiteBoardViewModel
+import com.example.whiteboard.ui.theme.LocalCustomColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -28,6 +31,13 @@ fun CustomCanvas(
     viewModel: WhiteBoardViewModel,
     modifier: Modifier
 ) {
+    val customColor = LocalCustomColors.current
+    DisposableEffect(customColor.canvasColor) {
+        viewModel.drawView?.setCanvasColor(customColor.canvasColor.toArgb())
+        viewModel.drawView?.setStrokeColor(customColor.defaultStrokeColor.toArgb())
+        onDispose { }
+    }
+
     Box(
         modifier = modifier
             .pointerInput(Unit) {
@@ -76,6 +86,7 @@ fun CustomCanvas(
                 factory = {
                     DrawView(it, null).apply {
                         viewModel.setDrawView(this)
+                        setCanvasColor(customColor.canvasColor.toArgb())
                     }
                 },
                 modifier = Modifier
