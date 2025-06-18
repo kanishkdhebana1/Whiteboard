@@ -41,6 +41,18 @@ class WhiteBoardViewModel: ViewModel() {
     var calculationResult by mutableStateOf("")
         private set
 
+    init {
+        initializeModel()
+    }
+
+    private fun initializeModel() {
+        viewModelScope.launch {
+            StrokeManager.download()
+            kotlinx.coroutines.delay(2000)
+            isModelInitialized = true
+        }
+    }
+
     fun recognizeAndCalculate() {
         viewModelScope.launch {
             if (isModelInitialized) {
@@ -71,21 +83,6 @@ class WhiteBoardViewModel: ViewModel() {
                 updateRecognizedText("Model not initialized")
                 calculationResult = "Model not initialized"
             }
-        }
-    }
-
-
-
-
-    init {
-        initializeModel()
-    }
-
-    private fun initializeModel() {
-        viewModelScope.launch {
-            StrokeManager.download()
-            kotlinx.coroutines.delay(2000)
-            isModelInitialized = true
         }
     }
 

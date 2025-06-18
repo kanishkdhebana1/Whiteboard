@@ -208,7 +208,9 @@ fun ParseDisplay(
     clipboardManager: ClipboardManager,
 ) {
     BoxWithConstraints(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 100.dp),
         contentAlignment = Alignment.TopEnd
     ) {
         Card(

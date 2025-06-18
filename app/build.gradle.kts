@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.filament.android)
     implementation (libs.androidx.material.icons.extended)
     implementation(libs.mathparser.org.mxparser)
+    implementation(libs.androidx.runtime.livedata)
 
 
     testImplementation(libs.junit)
